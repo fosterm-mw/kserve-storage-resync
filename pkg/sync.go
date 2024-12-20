@@ -35,12 +35,14 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 		}
 
 		diffFiles := compareDirectories(&localFiles, modelFiles)
-		pullModels(diffFiles)
+		if len(diffFiles) > 0 {
+			pullModels(diffFiles)
+		}
 		time.Sleep(180)
 	}
 }
 
-func compareDirectories(localDir *[]string, bucketDir []string) []string{
+func compareDirectories(localDir *[]string, bucketDir []string) []string {
 	diffList := make(map[string]bool)
 	for _, file := range *localDir {
 		diffList[file] = false
@@ -69,5 +71,7 @@ func compareDirectories(localDir *[]string, bucketDir []string) []string{
 }
 
 func pullModels(pullFiles []string) {
+	// copy files from bucket directory to local directory
+	// final check
 
 }
