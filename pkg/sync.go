@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"io"
 	"strings"
 	"time"
 
@@ -29,14 +32,16 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 			if err != nil {
 				log.Fatalf("Unable to read from bucket, error: %s", err)
 			}
-			if strings.Contains(obj.Name, "localai/models")  {
+			if strings.Contains(obj.Name, modelPath)  {
 				modelFiles = append(modelFiles, obj.Name)
 			}
 		}
 
 		diffFiles := compareDirectories(&localFiles, modelFiles)
 		if len(diffFiles) > 0 {
-			pullModels(diffFiles)
+			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, dir); err != nil {
+				log.Fatalf("Error pulling model: %s", err)
+			}
 		}
 		time.Sleep(180)
 	}
@@ -70,8 +75,25 @@ func compareDirectories(localDir *[]string, bucketDir []string) []string {
 	return pullList
 }
 
-func pullModels(pullFiles []string) {
-	// copy files from bucket directory to local directory
-	// final check
-
+func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, modelPath string, destination string) error {
+	for _, model := range pullFiles {
+		f, err := os.Create(destination + model)
+		if err != nil {
+			return fmt.Errorf("os.Create: %w", err)
+		}
+		rc, err := modelBucket.Object(modelPath + model).NewReader(ctx)
+		if err != nil {
+			return fmt.Errorf("Object(%q).NewReader: %w", model, err)
+		}
+		defer rc.Close()
+		if _, err := io.Copy(f, rc); err != nil {
+			return fmt.Errorf("io.Copy: %w", err)
+		}
+		if err = f.Close(); err != nil {
+			return fmt.Errorf("f.Close: %w", err)
+		}
+		log.Printf("Successfully downloaded: %s", model)
+	}
+	return nil
 }
+

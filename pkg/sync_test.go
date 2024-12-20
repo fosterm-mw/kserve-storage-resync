@@ -71,7 +71,6 @@ func TestCompareSameFiles(t *testing.T) {
 	if len(gotPullList) > 0 {
 		t.Fatalf(`Got %v, wanted an empty list`, gotPullList)
 	}
-
 }
 
 func TestCompareDifferentFiles(t *testing.T) {
