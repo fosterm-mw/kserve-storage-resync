@@ -32,7 +32,11 @@ func TestCompareExtraFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList, isDiff := compareDirectories(&localDir, bucketDir)
+
+	if !isDiff {
+		t.Fatalf("Got no difference in dirs, wanted a difference")
+	}
 
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
@@ -65,8 +69,11 @@ func TestCompareSameFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList, isDiff := compareDirectories(&localDir, bucketDir)
 
+	if isDiff {
+		t.Fatalf("Got a difference in dirs, wanted no difference")
+	}
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
 	}
@@ -99,7 +106,11 @@ func TestCompareDifferentFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList, isDiff := compareDirectories(&localDir, bucketDir)
+
+	if !isDiff {
+		t.Fatalf("Got no difference in dirs, wanted a difference")
+	}
 
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
