@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"context"
+	"strconv"
 
 	"cloud.google.com/go/storage"
 )
@@ -15,7 +16,8 @@ var (
 	addr = flag.String("addr", ":8080", "http service address")
 
 	gcsBucketURI = os.Getenv("GCS_BUCKET")
-	resyncInterval = os.Getenv("RESYNC_INTERVAL")
+	envResyncInterval = getEnv("RESYNC_INTERVAL", "300")
+	destination = getEnv("DESTINATION_DIR", "tmp/mnt/models")
 )
 
 func main() {
@@ -29,7 +31,11 @@ func main() {
 	
 	modelBucket := client.Bucket(bucketName)
 
-	go syncBucket(ctx, modelBucket, modelPath)
+	resyncInterval, err := strconv.Atoi(envResyncInterval)
+	if err != nil {
+		log.Fatal("Cannot convert RESYNC_INTERVAL to int")
+	}
+	go syncBucket(ctx, modelBucket, modelPath, resyncInterval)
 
 	flag.Parse()
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {

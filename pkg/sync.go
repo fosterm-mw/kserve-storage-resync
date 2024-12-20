@@ -13,14 +13,11 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPath string) {
+func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPath string, resyncInterval int) {
 	for true {
-		// TODO change this I don't like it and by this I mean dir
-		// I want to be able to set this to a env var
-		dir := "tmp/mnt/models"
-		localFiles, err := getFileNames(dir)
+		localFiles, err := getFileNames(destination)
 		if err != nil {
-			log.Println("Unable to read dir", dir, "error: ", err)
+			log.Println("Unable to read dir", destination, "error: ", err)
 		}
 		var modelFiles []string
 		iter := modelBucket.Objects(ctx, nil)
@@ -39,11 +36,11 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 
 		diffFiles := compareDirectories(&localFiles, modelFiles)
 		if len(diffFiles) > 0 {
-			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, dir); err != nil {
+			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, destination); err != nil {
 				log.Fatalf("Error pulling model: %s", err)
 			}
 		}
-		time.Sleep(180)
+		time.Sleep(time.Duration(resyncInterval) * time.Second)
 	}
 }
 

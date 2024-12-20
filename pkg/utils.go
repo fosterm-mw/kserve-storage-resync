@@ -38,3 +38,10 @@ func getFileNames(dir string) ([]string, error) {
 	}
 	return fileNames, nil
 }
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
