@@ -17,7 +17,7 @@ func parseBucketURI(bucketUri string) (string, string) {
 	var modelDir string
 	for i, dir := range parsedBucketUri {
 		if i > 1 {
-			modelDir += "/" + dir
+			modelDir += dir + "/"
 		}
 	}
 
@@ -44,6 +44,6 @@ func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
-	log.Println("No value set for %s, using %s", key, fallback)
+	log.Printf("No value set for %s, using %s", key, fallback)
 	return fallback
 }

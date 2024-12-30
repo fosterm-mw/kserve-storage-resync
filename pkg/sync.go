@@ -24,27 +24,32 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 		for {
 			obj, err := iter.Next()
 			if err == iterator.Done {
+				log.Print("Finished reading from bucket!")
 				break
 			}
 			if err != nil {
 				log.Fatalf("Unable to read from bucket, error: %s", err)
-			}
-			if strings.Contains(obj.Name, modelPath)  {
+			} 
+			if strings.Contains(obj.Name, modelPath) {
+				log.Print(obj.Name)
 				modelFiles = append(modelFiles, obj.Name)
 			}
 		}
 
 		diffFiles := compareDirectories(&localFiles, modelFiles)
 		if len(diffFiles) > 0 {
+			log.Printf("Found new Models, pulling...")
 			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, destination); err != nil {
 				log.Fatalf("Error pulling model: %s", err)
 			}
 		}
+		log.Print("Sleep")
 		time.Sleep(time.Duration(resyncInterval) * time.Second)
 	}
 }
 
 func compareDirectories(localDir *[]string, bucketDir []string) []string {
+	log.Print("Comparing Directories...")
 	diffList := make(map[string]bool)
 	for _, file := range *localDir {
 		diffList[file] = false
@@ -68,17 +73,18 @@ func compareDirectories(localDir *[]string, bucketDir []string) []string {
 	var pullList []string
 	for file := range diffList {
 		pullList = append(pullList, file)
+		log.Print(file)
 	}
-	return pullList
+	return pullList[1:]
 }
 
 func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, modelPath string, destination string) error {
 	for _, model := range pullFiles {
-		f, err := os.Create(destination + model)
+		f, err := os.Create(destination + "/" + model)
 		if err != nil {
 			return fmt.Errorf("os.Create: %w", err)
 		}
-		rc, err := modelBucket.Object(modelPath + model).NewReader(ctx)
+		rc, err := modelBucket.Object(model).NewReader(ctx)
 		if err != nil {
 			return fmt.Errorf("Object(%q).NewReader: %w", model, err)
 		}

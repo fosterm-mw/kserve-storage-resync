@@ -4,6 +4,10 @@ This repository contains a script to expose an endpoint and continuously sync a 
 
 ## Env
 `GCS_BUCKET` - Google Cloud Storage Bucket Uri
+EXAMPLE:
+```
+gs://example-bucket/models/
+```
 `INTERVAL` - Time to check bucket for any changes (seconds)
 `DEST` - Destination of files to be synced from GCS bucket
 
