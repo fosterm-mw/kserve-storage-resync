@@ -16,8 +16,8 @@ var (
 	addr = flag.String("addr", ":8080", "http service address")
 
 	gcsBucketURI = os.Getenv("GCS_BUCKET")
-	envResyncInterval = getEnv("RESYNC_INTERVAL", "300")
-	destination = getEnv("DESTINATION_DIR", "tmp/mnt/models")
+	envResyncInterval = getEnv("INTERVAL", "300")
+	destination = getEnv("DEST", "tmp/mnt/models")
 )
 
 func main() {
@@ -28,17 +28,18 @@ func main() {
 	}
 
 	bucketName, modelPath := parseBucketURI(gcsBucketURI)
-	
+
 	modelBucket := client.Bucket(bucketName)
 
 	resyncInterval, err := strconv.Atoi(envResyncInterval)
 	if err != nil {
-		log.Fatal("Cannot convert RESYNC_INTERVAL to int")
+		log.Fatal("Cannot convert INTERVAL to int")
 	}
 	go syncBucket(ctx, modelBucket, modelPath, resyncInterval)
 
 	flag.Parse()
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Status: ")
 		// respond with status of the pull, if there were any errors while syncing 
 		// if there was a successful sync
 	})
@@ -50,4 +51,3 @@ func main() {
 	
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
-

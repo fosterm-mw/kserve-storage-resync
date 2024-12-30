@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 	"os"
+	"log"
 )
 
 func parseBucketURI(bucketUri string) (string, string) {
@@ -43,5 +44,6 @@ func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
+	log.Println("No value set for %s, using %s", key, fallback)
 	return fallback
 }
