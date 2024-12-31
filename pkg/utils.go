@@ -44,6 +44,7 @@ func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
+	// WarningLogger.Printf("No value set for %s, using %s", key, fallback)
 	log.Printf("No value set for %s, using %s", key, fallback)
 	return fallback
 }

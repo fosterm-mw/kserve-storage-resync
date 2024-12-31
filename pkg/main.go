@@ -13,6 +13,13 @@ import (
 )
 
 var (
+	InfoLogger *log.Logger
+	DebugLogger *log.Logger
+	WarningLogger *log.Logger
+	ErrorLogger *log.Logger
+)
+
+var (
 	addr = flag.String("addr", ":8080", "http service address")
 
 	gcsBucketURI = os.Getenv("GCS_BUCKET")
@@ -20,11 +27,18 @@ var (
 	destination = getEnv("DEST", "tmp/mnt")
 )
 
+func init() {
+	InfoLogger = log.New(os.Stdout, "Info: ", log.Ldate|log.Ltime|log.Lshortfile)
+	DebugLogger = log.New(os.Stdout, "Debug: ", log.Ldate|log.Ltime|log.Lshortfile)
+	WarningLogger = log.New(os.Stdout, "Warning: ", log.Ldate|log.Ltime|log.Lshortfile)
+	ErrorLogger = log.New(os.Stdout, "Error: ", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
 func main() {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		log.Fatal("Cannot authenticate new client for GCP.")
+		ErrorLogger.Fatal("Cannot authenticate new client for GCP.")
 	}
 
 	bucketName, modelPath := parseBucketURI(gcsBucketURI)
@@ -33,7 +47,7 @@ func main() {
 
 	resyncInterval, err := strconv.Atoi(envResyncInterval)
 	if err != nil {
-		log.Fatal("Cannot convert INTERVAL to int")
+		ErrorLogger.Fatal("Cannot convert INTERVAL to int")
 	}
 	go syncBucket(ctx, modelBucket, modelPath, resyncInterval)
 
@@ -45,9 +59,9 @@ func main() {
 	})
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/healthz", *addr, http.StatusOK)
+		InfoLogger.Println("/healthz", *addr, http.StatusOK)
 		fmt.Fprintf(w, "Healthy!")
 	})
 	
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	ErrorLogger.Fatal(http.ListenAndServe(*addr, nil))
 }
