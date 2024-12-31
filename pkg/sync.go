@@ -75,7 +75,12 @@ func compareDirectories(localDir *[]string, bucketDir []string) []string {
 		pullList = append(pullList, file)
 		log.Print(file)
 	}
-	return pullList[1:]
+	// if (len(pullList) > 0) {
+	// 	return pullList[1:]
+	// } else {
+	// 	return pullList
+	// }
+	return pullList
 }
 
 func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, modelPath string, destination string) error {
