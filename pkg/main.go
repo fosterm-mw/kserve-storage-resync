@@ -54,11 +54,11 @@ func main() {
 
 	statusChan = make(chan string)
 	go syncBucket(ctx, modelBucket, modelPath, resyncInterval)
+	status := <- statusChan
 
 	flag.Parse()
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		InfoLogger.Println("/status", *addr, http.StatusOK)
-		status := <- statusChan
 		fmt.Fprintf(w, "Status: %s", status)
 	})
 

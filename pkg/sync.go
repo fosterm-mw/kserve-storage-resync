@@ -56,10 +56,10 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 
 func compareDirectories(localDir *[]string, bucketDir []string, modelPath string) []string {
 	log.Print("Comparing Directories...")
-
 	var localDirCopy []string
 	pullFiles := bucketDir
 	offset := 0
+
 	for _, localFile := range *localDir{
 		for idx, bucketFile := range bucketDir{
 			if bucketFile == modelPath {
