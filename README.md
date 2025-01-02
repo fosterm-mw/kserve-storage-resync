@@ -14,12 +14,15 @@ gs://example-bucket/models/
 ## Run
 Locally:
 ```
+gcloud auth application-default login
+```
+```
 go run .
 ```
 Navigate to http://localhost:8080 to see running web server.
 
 ## Testing
-Unit Tests: `go test -v`
+Unit Tests: `go test -v`\n
 e2e:
 * Create GCS Bucket with files
 * `gcloud auth application-default login`
@@ -27,6 +30,3 @@ e2e:
 * Check if the files have been added
 
 ## Contributing
-
-## Maintainers
-* fostemi
