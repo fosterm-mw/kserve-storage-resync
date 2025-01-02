@@ -14,49 +14,44 @@ import (
 )
 
 func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPath string, resyncInterval int) {
+	statusChan <- "Initializing"
 	for true {
 		localFiles, err := getFileNames(destination)
 		if err != nil {
-			// WarningLogger.Println("Unable to read dir", destination, "error: ", err)
-			log.Println("Unable to read dir", destination, "error: ", err)
+			statusChan <- fmt.Sprintf("Unable to read dir %s, error: %e", destination, err)
 		}
 		var modelFiles []string
 		iter := modelBucket.Objects(ctx, nil)
 		for {
 			obj, err := iter.Next()
 			if err == iterator.Done {
-				// InfoLogger.Print("Finished reading from bucket!")
 				log.Print("Finished reading from bucket!")
 				break
 			}
 			if err != nil {
-				// ErrorLogger.Fatalf("Unable to read from bucket, error: %s", err)
+				statusChan <- fmt.Sprintf("Unable to read from bucket, error: %e", err)
 				log.Fatalf("Unable to read from bucket, error: %s", err)
 			} 
 			if strings.Contains(obj.Name, modelPath) {
-				// DebugLogger.Print(obj.Name)
 				log.Print(obj.Name)
 				modelFiles = append(modelFiles, obj.Name)
 			}
 		}
 
-		diffFiles := compareDirectories(&localFiles, modelFiles)
+		diffFiles := compareDirectories(&localFiles, modelFiles, modelPath)
 		if len(diffFiles) > 0 {
-			// InfoLogger.Printf("Found new Models, pulling...")
-			log.Printf("Found new Models, pulling...")
-			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, destination); err != nil {
-				// ErrorLogger.Fatalf("Error pulling model: %s", err)
+			statusChan <- fmt.Sprintf("Found new models, pulling...")
+			if err = pullModels(ctx, modelBucket, diffFiles, destination); err != nil {
 				log.Fatalf("Error pulling model: %s", err)
 			}
 		}
-		// InfoLogger.Print("Sleep")
 		log.Print("Sleep")
+		statusChan <- "Successful pull, sleeping"
 		time.Sleep(time.Duration(resyncInterval) * time.Second)
 	}
 }
 
-func compareDirectories(localDir *[]string, bucketDir []string) []string {
-	// InfoLogger.Print("Comparing Directories...")
+func compareDirectories(localDir *[]string, bucketDir []string, modelPath string) []string {
 	log.Print("Comparing Directories...")
 	diffList := make(map[string]bool)
 	for _, file := range *localDir {
@@ -80,19 +75,21 @@ func compareDirectories(localDir *[]string, bucketDir []string) []string {
 
 	var pullList []string
 	for file := range diffList {
-		pullList = append(pullList, file)
-		// DebugLogger.Print(file)
-		log.Print(file)
+		if file != modelPath {
+			pullList = append(pullList, file)
+			log.Print(file)
+		}
 	}
 	// if (len(pullList) > 0) {
 	// 	return pullList[1:]
 	// } else {
 	// 	return pullList
 	// }
-	return pullList[1:]
+	return pullList
 }
 
-func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, modelPath string, destination string) error {
+func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, destination string) error {
+	statusChan <- "Pulling Models"
 	for _, model := range pullFiles {
 		f, err := os.Create(destination + "/" + model)
 		if err != nil {
@@ -109,7 +106,6 @@ func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFile
 		if err = f.Close(); err != nil {
 			return fmt.Errorf("f.Close: %w", err)
 		}
-		// InfoLogger.Printf("Successfully downloaded: %s", model)
 		log.Printf("Successfully downloaded: %s", model)
 	}
 	return nil

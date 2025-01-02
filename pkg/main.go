@@ -13,18 +13,20 @@ import (
 )
 
 var (
-	InfoLogger *log.Logger
-	DebugLogger *log.Logger
-	WarningLogger *log.Logger
-	ErrorLogger *log.Logger
-)
-
-var (
 	addr = flag.String("addr", ":8080", "http service address")
 
 	gcsBucketURI = os.Getenv("GCS_BUCKET")
 	envResyncInterval = getEnv("INTERVAL", "300")
 	destination = getEnv("DEST", "tmp/mnt")
+)
+
+var statusChan chan string
+
+var (
+	InfoLogger *log.Logger
+	DebugLogger *log.Logger
+	WarningLogger *log.Logger
+	ErrorLogger *log.Logger
 )
 
 func init() {
@@ -49,13 +51,15 @@ func main() {
 	if err != nil {
 		ErrorLogger.Fatal("Cannot convert INTERVAL to int")
 	}
+
+	statusChan = make(chan string)
 	go syncBucket(ctx, modelBucket, modelPath, resyncInterval)
 
 	flag.Parse()
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Status: ")
-		// respond with status of the pull, if there were any errors while syncing 
-		// if there was a successful sync
+		InfoLogger.Println("/status", *addr, http.StatusOK)
+		status := <- statusChan
+		fmt.Fprintf(w, "Status: %s", status)
 	})
 
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

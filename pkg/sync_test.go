@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+var modelPath string = ""
+
 func TestCompareExtraFiles(t *testing.T) {
 	localDir := []string{
 		"llama.yaml",
@@ -32,7 +34,7 @@ func TestCompareExtraFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList := compareDirectories(&localDir, bucketDir, modelPath)
 
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
@@ -63,7 +65,7 @@ func TestCompareSameFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList := compareDirectories(&localDir, bucketDir, modelPath)
 
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
@@ -96,7 +98,7 @@ func TestCompareDifferentFiles(t *testing.T) {
 		"nemo.gguf",
 	}
 
-	gotPullList := compareDirectories(&localDir, bucketDir)
+	gotPullList := compareDirectories(&localDir, bucketDir, modelPath)
 
 	if !reflect.DeepEqual(localDir, wantLocalDir) {
 		t.Fatalf(`Got %v, wanted %v`, localDir, wantLocalDir)
