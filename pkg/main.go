@@ -17,7 +17,7 @@ var (
 
 	gcsBucketURI = os.Getenv("GCS_BUCKET")
 	envResyncInterval = getEnv("INTERVAL", "300")
-	destination = getEnv("DEST", "tmp/mnt")
+	destination = getEnv("DEST", "tmp/mnt/models")
 )
 
 var statusChan chan string

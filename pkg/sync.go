@@ -33,15 +33,18 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 				log.Fatalf("Unable to read from bucket, error: %s", err)
 			} 
 			if strings.Contains(obj.Name, modelPath) {
-				log.Print(obj.Name)
-				modelFiles = append(modelFiles, obj.Name)
+				if obj.Name != modelPath{
+					modelFile := strings.Replace(obj.Name, modelPath, "", -1)
+					log.Print(modelFile)
+					modelFiles = append(modelFiles, modelFile)
+				}
 			}
 		}
 
 		diffFiles := compareDirectories(&localFiles, modelFiles, modelPath)
 		if len(diffFiles) > 0 {
 			statusChan <- fmt.Sprintf("Found new models, pulling...")
-			if err = pullModels(ctx, modelBucket, diffFiles, destination); err != nil {
+			if err = pullModels(ctx, modelBucket, diffFiles, modelPath, destination); err != nil {
 				log.Fatalf("Error pulling model: %s", err)
 			}
 		}
@@ -53,51 +56,42 @@ func syncBucket(ctx context.Context, modelBucket *storage.BucketHandle, modelPat
 
 func compareDirectories(localDir *[]string, bucketDir []string, modelPath string) []string {
 	log.Print("Comparing Directories...")
-	diffList := make(map[string]bool)
-	for _, file := range *localDir {
-		diffList[file] = false
-	}
-	for _, model := range bucketDir {
-		diffList[model] = true
-	}
 
 	var localDirCopy []string
-	for _, file := range *localDir {
-		if diffList[file] == false {
-			delete(diffList, file)
-		}
-		if diffList[file] == true {
-			localDirCopy = append(localDirCopy, file)
-			delete(diffList, file)
+	pullFiles := bucketDir
+	offset := 0
+	for _, localFile := range *localDir{
+		for idx, bucketFile := range bucketDir{
+			if bucketFile == modelPath {
+				break
+			}
+			if localFile == bucketFile{
+				if idx == 0 {
+					pullFiles = pullFiles[1:]
+					offset += 1
+				} else {
+					pullFiles = append(pullFiles[:idx-offset], pullFiles[idx+1-offset:]...)
+				}
+				localDirCopy = append(localDirCopy, localFile)
+				break
+			}
 		}
 	}
 	*localDir = localDirCopy
 
-	var pullList []string
-	for file := range diffList {
-		if file != modelPath {
-			pullList = append(pullList, file)
-			log.Print(file)
-		}
-	}
-	// if (len(pullList) > 0) {
-	// 	return pullList[1:]
-	// } else {
-	// 	return pullList
-	// }
-	return pullList
+	return pullFiles
 }
 
-func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, destination string) error {
+func pullModels(ctx context.Context, modelBucket *storage.BucketHandle, pullFiles []string, modelPath, destination string) error {
 	statusChan <- "Pulling Models"
 	for _, model := range pullFiles {
 		f, err := os.Create(destination + "/" + model)
 		if err != nil {
 			return fmt.Errorf("os.Create: %w", err)
 		}
-		rc, err := modelBucket.Object(model).NewReader(ctx)
+		rc, err := modelBucket.Object(modelPath + model).NewReader(ctx)
 		if err != nil {
-			return fmt.Errorf("Object(%q).NewReader: %w", model, err)
+			return fmt.Errorf("Object(%q).NewReader: %w", modelPath +  model, err)
 		}
 		defer rc.Close()
 		if _, err := io.Copy(f, rc); err != nil {
